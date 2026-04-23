@@ -1,0 +1,11 @@
+Ticket;Aberto em;Cliente;Assunto;Responsável;Entrada;Horário;Saída;Horário;Tempo;Status
+101;2024-04-23 10:00;Cliente A;Cancelamento de Nota Fiscal;Artur;2024-04-23;10:00;2024-04-23;10:15;15;OK
+102;2024-04-23 10:30;Cliente B;Emissão de NF-e com erro;Bruno;2024-04-23;10:30;2024-04-23;11:00;30;OK
+103;2024-04-23 11:00;Cliente C;Relatório de vendas mensal;Carlos;2024-04-23;11:00;2024-04-23;11:45;45;OK
+104;2024-04-23 11:30;Cliente D;Configuração LBC POS;Artur;2024-04-23;11:30;2024-04-23;12:00;30;OK
+105;2024-04-23 12:00;Cliente E;Cancelar pedido urgente;Bruno;2024-04-23;12:00;2024-04-23;12:10;10;OK
+106;2024-04-23 12:30;Cliente F;Dúvida sobre nfc-e;Carlos;2024-04-23;12:30;2024-04-23;13:00;30;OK
+107;2024-04-23 13:00;Cliente G;Erro ao emitir nf;Artur;2024-04-23;13:00;2024-04-23;13:30;30;OK
+108;2024-04-23 13:30;Cliente H;Lbcpos travado;Bruno;2024-04-23;13:30;2024-04-23;14:00;30;OK
+109;2024-04-23 14:00;Cliente I;Impressão de relatório;Carlos;2024-04-23;14:00;2024-04-23;14:30;30;OK
+110;2024-04-23 14:30;Cliente J;Outro assunto qualquer;Artur;2024-04-23;14:30;2024-04-23;14:40;10;OK

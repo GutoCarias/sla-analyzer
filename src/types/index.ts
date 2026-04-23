@@ -21,12 +21,27 @@ export interface TicketRow {
 export interface FilterState {
   responsible: string[];
   subjectSearch: string;
+  subjectGroupFilter: string;
   customerNameSearch: string;
   statusFilter: 'Normal' | 'Atenção' | 'SLA Estourado' | '';
   dateFrom: string;
   dateTo: string;
   sortField: keyof TicketRow;
   sortDirection: 'asc' | 'desc';
+}
+
+export interface TechnicianScore {
+  name: string;
+  ticketCount: number;
+  avgDurationMinutes: number;
+  score: number;
+  classification: 'Excellent' | 'Medium' | 'Critical';
+}
+
+export interface Insight {
+  type: 'success' | 'warning' | 'error' | 'info';
+  message: string;
+  description?: string;
 }
 
 export interface Stats {
@@ -38,6 +53,8 @@ export interface Stats {
   outsideSLA: number;
   avgDurationMinutes: number;
   maxDurationMinutes: number;
-  technicians: number;
+  techniciansCount: number;
   slaPercent: number;
+  ranking: TechnicianScore[];
+  insights: Insight[];
 }

@@ -5,13 +5,21 @@ import StatsCards from './components/StatsCards';
 import DashboardCharts from './components/DashboardCharts';
 import Filters from './components/Filters';
 import DataTable from './components/DataTable';
+import InsightsBlock from './components/InsightsBlock';
+import TechnicianRanking from './components/TechnicianRanking';
 import { parseCSV, exportToCSV } from './utils/csvParser';
 import { toInputDate } from './utils/dateUtils';
-import { FilterState, Stats, TicketRow, SLA_BREACH_MINUTES, SLA_WARN_MINUTES } from './types';
+import { normalizeText } from './utils/textNormalization';
+import RecurringSubjects, { GROUPS } from './components/RecurringSubjects';
+import RecurringSubjectsView from './components/RecurringSubjectsView';
+import NavigationTabs, { TabId } from './components/NavigationTabs';
+import { FilterState, Stats, TicketRow, SLA_BREACH_MINUTES, SLA_WARN_MINUTES, Insight, TechnicianScore } from './types';
+import { BarChart3, LayoutDashboard } from 'lucide-react';
 
 const DEFAULT_FILTERS: FilterState = {
   responsible: [],
   subjectSearch: '',
+  subjectGroupFilter: '',
   customerNameSearch: '',
   statusFilter: '',
   dateFrom: '',
@@ -29,6 +37,9 @@ export default function App() {
   const [page, setPage] = useState(1);
   const [loaded, setLoaded] = useState(false);
   const [isCompact, setIsCompact] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
+  const [rankingSortMode, setRankingSortMode] = useState<'tickets' | 'score'>('score');
+
 
   function handleFile(content: string, name: string) {
     const parsed = parseCSV(content);
@@ -70,8 +81,27 @@ export default function App() {
     }
 
     if (filters.subjectSearch) {
-      const search = filters.subjectSearch.toLowerCase();
-      result = result.filter(r => r.subject.toLowerCase().includes(search));
+      const search = normalizeText(filters.subjectSearch);
+      result = result.filter(r => normalizeText(r.subject).includes(search));
+    }
+
+    if (filters.subjectGroupFilter) {
+      const group = GROUPS.find(g => g.name === filters.subjectGroupFilter);
+      if (group) {
+        result = result.filter(r => {
+          const norm = normalizeText(r.subject);
+          return group.keywords.some(k => norm.includes(normalizeText(k)));
+        });
+      } else if (filters.subjectGroupFilter === 'Outros' || filters.subjectGroupFilter === 'Outros (Geral)') {
+        result = result.filter(r => {
+          const norm = normalizeText(r.subject);
+          return !GROUPS.some(g => g.keywords.some(k => norm.includes(normalizeText(k))));
+        });
+      } else {
+        // Individual subject discovered by analysis
+        const target = normalizeText(filters.subjectGroupFilter);
+        result = result.filter(r => normalizeText(r.subject) === target);
+      }
     }
 
     if (filters.customerNameSearch) {
@@ -142,6 +172,64 @@ export default function App() {
     const filteredTechnicians = Array.from(new Set(data.map(r => r.responsible).filter(Boolean))).length;
     const slaPercent = valid.length ? Math.round((withinSLA / valid.length) * 100) : 0;
 
+    // Ranking de Técnicos
+    const techGroups: Record<string, number[]> = {};
+    valid.forEach(r => {
+      if (r.responsible) {
+        if (!techGroups[r.responsible]) techGroups[r.responsible] = [];
+        techGroups[r.responsible].push(r.durationMinutes as number);
+      }
+    });
+
+    const ranking: TechnicianScore[] = Object.entries(techGroups).map(([name, durs]) => {
+      const count = durs.length;
+      const tAvg = Math.round(durs.reduce((a, b) => a + b, 0) / count);
+      // Score = tickets / (tempo médio em horas)
+      const score = tAvg > 0 ? Number((count / (tAvg / 60)).toFixed(2)) : count;
+      
+      let classification: 'Excellent' | 'Medium' | 'Critical' = 'Medium';
+      if (tAvg < SLA_WARN_MINUTES && count > 5) classification = 'Excellent';
+      else if (tAvg >= SLA_BREACH_MINUTES) classification = 'Critical';
+
+      return { name, ticketCount: count, avgDurationMinutes: tAvg, score, classification };
+    }).sort((a, b) => {
+      if (rankingSortMode === 'score') return b.score - a.score;
+      return b.ticketCount - a.ticketCount;
+    });
+
+    // Insights Automáticos
+    const insights: Insight[] = [];
+    if (slaPercent < 70 && valid.length > 0) {
+      insights.push({ 
+        type: 'error', 
+        message: 'Alto volume de tickets fora do SLA', 
+        description: `${100 - slaPercent}% dos tickets estão estourados. Risco crítico de operação.` 
+      });
+    }
+
+    if (ranking.length > 0) {
+      const top = ranking[0];
+      const avgScore = ranking.reduce((acc, r) => acc + r.score, 0) / ranking.length;
+      const diff = Math.round(((top.score - avgScore) / avgScore) * 100);
+      
+      if (diff > 15) {
+        insights.push({
+          type: 'success',
+          message: `${top.name.split(' ')[0]} entrega performance acima da média`,
+          description: `Resolve tickets ${diff}% mais rápido que o padrão da equipe.`
+        });
+      }
+    }
+
+    const highVolumeSLA = ranking.find(r => r.classification === 'Critical');
+    if (highVolumeSLA) {
+      insights.push({
+        type: 'warning',
+        message: `Gargalo identificado: ${highVolumeSLA.name.split(' ')[0]}`,
+        description: 'Volume de tickets atrasados acima do limite de segurança.'
+      });
+    }
+
     return {
       total,
       valid: valid.length,
@@ -151,10 +239,12 @@ export default function App() {
       outsideSLA,
       avgDurationMinutes: avg,
       maxDurationMinutes: max,
-      technicians: filteredTechnicians,
+      techniciansCount: filteredTechnicians,
       slaPercent,
+      ranking,
+      insights
     };
-  }, [filteredRows]);
+  }, [filteredRows, rankingSortMode]);
 
   function handleExport() {
     const csv = exportToCSV(filteredRows);
@@ -174,138 +264,195 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50/30">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 h-11 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-              <FileSpreadsheet className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <span className="font-bold text-slate-800 text-xs">SLA Analyzer</span>
-            </div>
-          </div>
-
-          {loaded && (
+      {/* Unified Header & Navigation */}
+      <div className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
+        <header className="h-11">
+          <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="hidden lg:inline text-[10px] text-slate-400 truncate max-w-[150px] mr-2">{fileName}</span>
-              
-              <button
-                onClick={() => setIsCompact(!isCompact)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold transition-all shadow-sm ${
-                  isCompact ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {isCompact ? <Layout className="w-3 h-3" /> : <List className="w-3 h-3" />}
-                {isCompact ? 'MODO NORMAL' : 'MODO COMPACTO'}
-              </button>
-
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-md transition-colors shadow-sm"
-              >
-                <Download className="w-3 h-3" />
-                EXPORTAR
-              </button>
-              <button
-                onClick={handleReset}
-                className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold rounded-md transition-colors"
-              >
-                <RefreshCw className="w-3 h-3" />
-                NOVO
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
-
-      <main className={`max-w-7xl mx-auto px-4 ${isCompact ? 'py-4' : 'py-8'} space-y-4`}>
-        {!loaded ? (
-          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] gap-8">
-            <div className="text-center space-y-2 max-w-xl">
-              <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg mb-4">
-                <FileSpreadsheet className="w-8 h-8 text-white" />
+              <div className="w-7 h-7 bg-brand-blue rounded-lg flex items-center justify-center shadow-sm">
+                <FileSpreadsheet className="w-4 h-4 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-slate-800">Analisador de SLA</h1>
-              <p className="text-slate-500 text-base leading-relaxed">
-                Importe seu arquivo CSV para visualizar e analisar os dados de atendimento,
-                calcular tempos de SLA e identificar gargalos por técnico.
+              <div>
+                <span className="font-bold text-slate-800 text-xs">SLA Analyzer Pro</span>
+              </div>
+            </div>
+
+            {loaded && (
+              <div className="flex items-center gap-2">
+                <span className="hidden lg:inline text-[10px] text-slate-400 truncate max-w-[150px] mr-2">{fileName}</span>
+                
+                <button
+                  onClick={() => setIsCompact(!isCompact)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold transition-all ${
+                    isCompact ? 'bg-brand-blue text-white hover:bg-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                  title={isCompact ? 'Modo Normal' : 'Modo Compacto'}
+                >
+                  {isCompact ? <Layout className="w-3 h-3" /> : <List className="w-3 h-3" />}
+                  <span className="hidden sm:inline uppercase">{isCompact ? 'NORMAL' : 'COMPACTO'}</span>
+                </button>
+
+                <button
+                  onClick={handleExport}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-green hover:bg-green-700 text-white text-[10px] font-bold rounded-md transition-colors shadow-sm"
+                  title="Exportar"
+                >
+                  <Download className="w-3 h-3" />
+                  <span className="hidden sm:inline uppercase">EXPORTAR</span>
+                </button>
+                <button
+                  onClick={handleReset}
+                  className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold rounded-md transition-colors"
+                  title="Novo Relatório"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span className="hidden sm:inline uppercase">NOVO</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </header>
+
+        {loaded && (
+          <NavigationTabs activeTab={activeTab} onChange={setActiveTab} />
+        )}
+      </div>
+
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {!loaded ? (
+          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] gap-8">
+            <div className="text-center space-y-4 max-w-xl">
+              <div className="w-20 h-20 bg-brand-blue rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-brand-blue/20 mb-6">
+                <FileSpreadsheet className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="text-4xl font-black text-slate-800 tracking-tight">SLA Analyzer Pro</h1>
+              <p className="text-slate-500 text-lg leading-relaxed font-medium">
+                Sua central de inteligência para gestão de suporte. 
+                Analise performance, identifique gargalos e otimize seu SLA.
               </p>
             </div>
 
-            <FileUpload onFileParsed={handleFile} />
+            <div className="w-full max-w-md">
+              <FileUpload onFileParsed={handleFile} />
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl mt-8">
               {[
-                { label: 'Coluna A', desc: 'Data de abertura' },
-                { label: 'Coluna C', desc: 'Número do ticket' },
-                { label: 'Coluna D', desc: 'Nome do cliente' },
-                { label: 'Coluna E', desc: 'Assunto do ticket' },
-                { label: 'Coluna H', desc: 'Técnico responsável' },
-                { label: 'Colunas S e T', desc: 'Entrada/Saída SLA N2' },
+                { label: 'Visão Geral', desc: 'KPIs em tempo real com status de SLA' },
+                { label: 'Ranking', desc: 'Performance de técnicos baseada em volume e tempo' },
+                { label: 'BI Insights', desc: 'Análise automática de tendências e problemas' },
               ].map(c => (
-                <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
-                  <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-md mb-2">
+                <div key={c.label} className="card-premium p-6 text-center bg-white/50 backdrop-blur-sm">
+                  <span className="inline-block px-3 py-1 bg-brand-blue/10 text-brand-blue text-[10px] font-black rounded-full mb-3 uppercase tracking-widest">
                     {c.label}
                   </span>
-                  <p className="text-sm text-slate-600">{c.desc}</p>
+                  <p className="text-sm text-slate-600 font-semibold">{c.desc}</p>
                 </div>
               ))}
             </div>
           </div>
-        ) : (
-          <>
-            <StatsCards stats={stats} />
-
-            <DashboardCharts 
-              rows={filteredRows} 
-              onFilterTechnician={(tech) => onFiltersChange({ ...filters, responsible: [tech] })}
-              onFilterStatus={(status) => onFiltersChange({ ...filters, statusFilter: status as any })}
-            />
-
-            <Filters
-              filters={filters}
-              onChange={onFiltersChange}
-              technicians={technicians}
-              ticketCounts={ticketCounts}
-              onReset={() => onFiltersChange(DEFAULT_FILTERS)}
-            />
-
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <div>
-                <h2 className="text-xs font-bold text-slate-800 uppercase tracking-tight">Registros</h2>
-                <p className="text-[10px] text-slate-400">
-                  {filteredRows.length} de {rows.length}
-                  {filters.responsible.length > 0 && ` — ${filters.responsible.length} técnicos selecionados`}
-                </p>
+        ) : activeTab === 'dashboard' ? (
+          <div className="animate-in fade-in duration-500">
+            {/* KPI Section */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Visão Estratégica</h2>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">{fileName}</span>
+                </div>
               </div>
-              <button
-                onClick={handleExport}
-                className="flex items-center gap-1 px-2 py-1 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-[10px] font-bold rounded-md transition-colors shadow-sm"
-              >
-                <Download className="w-3 h-3" />
-                EXPORTAR FILTRADO
-              </button>
+              <StatsCards stats={stats} />
             </div>
 
-            <DataTable
-              rows={filteredRows}
-              page={page}
-              pageSize={PAGE_SIZE}
-              onPageChange={setPage}
-              isCompact={isCompact}
-            />
+            {/* Insights Banner */}
+            <div className="mb-8">
+              <InsightsBlock insights={stats.insights} />
+            </div>
 
-            <div className="flex items-center justify-center pt-4 pb-8">
+            {/* Main Dashboard Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+              {/* Charts and Ranking Row */}
+              <div className="lg:col-span-8 space-y-6">
+                <DashboardCharts 
+                  rows={filteredRows} 
+                  onFilterTechnician={(tech) => onFiltersChange({ ...filters, responsible: [tech] })}
+                  onFilterStatus={(status) => onFiltersChange({ ...filters, statusFilter: status as any })}
+                  ranking={stats.ranking}
+                  sortMode={rankingSortMode}
+                />
+                
+                <Filters
+                  filters={filters}
+                  onChange={onFiltersChange}
+                  technicians={technicians}
+                  ticketCounts={ticketCounts}
+                  onReset={() => onFiltersChange(DEFAULT_FILTERS)}
+                />
+              </div>
+
+              <div className="lg:col-span-4">
+                <TechnicianRanking 
+                  ranking={stats.ranking} 
+                  onSelect={(tech) => onFiltersChange({ ...filters, responsible: [tech] })}
+                  sortMode={rankingSortMode}
+                  onSortModeChange={setRankingSortMode}
+                />
+              </div>
+            </div>
+
+            {/* Data Table Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div>
+                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">Base de Dados</h2>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                    Exibindo {filteredRows.length} atendimentos filtrados
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExport}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-brand-blue hover:bg-blue-700 text-white text-[10px] font-black rounded-lg transition-all shadow-md shadow-brand-blue/20"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    EXPORTAR DATASET
+                  </button>
+                  <button
+                    onClick={handleReset}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 text-[10px] font-black rounded-lg transition-all"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    REINICIAR
+                  </button>
+                </div>
+              </div>
+
+              <DataTable
+                rows={filteredRows}
+                page={page}
+                pageSize={PAGE_SIZE}
+                onPageChange={setPage}
+                isCompact={isCompact}
+              />
+            </div>
+
+            <div className="flex items-center justify-center pt-12 pb-8 border-t border-slate-100 mt-12">
               <button
                 onClick={handleReset}
-                className="flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-3 text-xs font-black text-slate-400 hover:text-brand-blue transition-all uppercase tracking-[0.2em]"
               >
                 <Upload className="w-4 h-4" />
-                Importar outro arquivo
+                Upload de Novo Relatório
               </button>
             </div>
-          </>
+          </div>
+        ) : (
+          <RecurringSubjectsView 
+            rows={rows} 
+            initialFilters={filters}
+            onBack={() => setActiveTab('dashboard')}
+          />
         )}
       </main>
     </div>

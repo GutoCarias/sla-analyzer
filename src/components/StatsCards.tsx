@@ -10,47 +10,51 @@ export default function StatsCards({ stats }: Props) {
   const cards = [
     {
       label: 'Total de Tickets',
-      value: stats.total.toString(),
+      value: stats.total.toLocaleString(),
       sub: `${stats.valid} processados`,
       icon: BarChart2,
       color: 'blue',
-    },
-    {
-      label: 'Em Atendimento',
-      value: stats.pending.toString(),
-      sub: 'tickets abertos',
-      icon: Activity,
-      color: 'slate',
-    },
-    {
-      label: 'Dentro do SLA',
-      value: stats.withinSLA.toString(),
-      sub: `${stats.slaPercent}% do total`,
-      icon: CheckCircle,
-      color: 'emerald',
-    },
-    {
-      label: 'Fora do SLA',
-      value: stats.outsideSLA.toString(),
-      sub: `${100 - stats.slaPercent}% do total`,
-      icon: AlertTriangle,
-      color: 'red',
+      progress: 100,
     },
     {
       label: 'Tempo Médio',
       value: formatDuration(stats.avgDurationMinutes),
-      sub: 'média geral',
+      sub: stats.avgDurationMinutes > 240 ? 'Crítico' : stats.avgDurationMinutes > 60 ? 'Alerta' : 'Excelente',
       icon: Clock,
-      color: stats.avgDurationMinutes > 120 ? 'red' : stats.avgDurationMinutes > 60 ? 'amber' : 'emerald',
+      color: stats.avgDurationMinutes > 240 ? 'red' : stats.avgDurationMinutes > 60 ? 'amber' : 'green',
+      progress: Math.max(0, 100 - (stats.avgDurationMinutes / 480) * 100),
+    },
+    {
+      label: 'SLA OK',
+      value: `${stats.slaPercent}%`,
+      sub: `${stats.withinSLA} dentro do prazo`,
+      icon: CheckCircle,
+      color: 'green',
+      progress: stats.slaPercent,
+    },
+    {
+      label: 'SLA Estourado',
+      value: `${100 - stats.slaPercent}%`,
+      sub: `${stats.outsideSLA} fora do prazo`,
+      icon: AlertTriangle,
+      color: 'red',
+      progress: 100 - stats.slaPercent,
+    },
+    {
+      label: 'Técnicos Ativos',
+      value: stats.techniciansCount.toString(),
+      sub: 'na seleção atual',
+      icon: Users,
+      color: 'blue',
+      progress: 100,
     },
   ];
 
-  const colorMap: Record<string, { bg: string; icon: string; text: string; border: string }> = {
-    blue: { bg: 'bg-blue-50', icon: 'text-blue-600', text: 'text-blue-700', border: 'border-blue-100' },
-    slate: { bg: 'bg-slate-50', icon: 'text-slate-600', text: 'text-slate-700', border: 'border-slate-100' },
-    emerald: { bg: 'bg-emerald-50', icon: 'text-emerald-600', text: 'text-emerald-700', border: 'border-emerald-100' },
-    red: { bg: 'bg-red-50', icon: 'text-red-600', text: 'text-red-700', border: 'border-red-100' },
-    amber: { bg: 'bg-amber-50', icon: 'text-amber-600', text: 'text-amber-700', border: 'border-amber-100' },
+  const colorMap: Record<string, { bg: string; icon: string; text: string; border: string; bar: string }> = {
+    blue: { bg: 'bg-brand-blue/10', icon: 'text-brand-blue', text: 'text-brand-blue', border: 'border-brand-blue/20', bar: 'bg-brand-blue' },
+    green: { bg: 'bg-brand-green/10', icon: 'text-brand-green', text: 'text-brand-green', border: 'border-brand-green/20', bar: 'bg-brand-green' },
+    red: { bg: 'bg-brand-red/10', icon: 'text-brand-red', text: 'text-brand-red', border: 'border-brand-red/20', bar: 'bg-brand-red' },
+    amber: { bg: 'bg-brand-amber/10', icon: 'text-brand-amber', text: 'text-brand-amber', border: 'border-brand-amber/20', bar: 'bg-brand-amber' },
   };
 
   return (
@@ -61,25 +65,31 @@ export default function StatsCards({ stats }: Props) {
         return (
           <div
             key={card.label}
-            className={`bg-white rounded-xl border ${c.border} p-3 shadow-sm hover:shadow-md transition-all duration-200`}
+            className={`card-premium p-4 flex flex-col justify-between group hover:border-brand-blue/30`}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className={`text-xl font-black ${c.text} leading-tight`}>{card.value}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{card.label}</p>
+                <p className="kpi-label mb-1">{card.label}</p>
+                <p className={`kpi-value ${c.text}`}>{card.value}</p>
               </div>
-              <div className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center shadow-sm`}>
+              <div className={`w-9 h-9 rounded-xl ${c.bg} flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform`}>
                 <Icon className={`w-4 h-4 ${c.icon}`} />
               </div>
             </div>
-            <div className="mt-2 flex items-center gap-1.5">
-              <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+            
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold text-slate-400 truncate">{card.sub}</span>
+                {card.progress !== undefined && (
+                  <span className="text-[9px] font-black text-slate-400">{Math.round(card.progress)}%</span>
+                )}
+              </div>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                 <div 
-                  className={`h-full ${c.bg.replace('50', '500')} transition-all duration-500`} 
-                  style={{ width: card.label.includes('SLA') ? `${card.sub.split('%')[0]}%` : '100%' }}
+                  className={`h-full ${c.bar} transition-all duration-1000 ease-out`} 
+                  style={{ width: `${card.progress}%` }}
                 />
               </div>
-              <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">{card.sub}</span>
             </div>
           </div>
         );

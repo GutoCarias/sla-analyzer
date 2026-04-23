@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-['Inter'] bg-surface-bg text-surface-text-primary antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+  .card-premium {
+    @apply bg-surface-card rounded-xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden;
+  }
+
+  .kpi-value {
+    @apply text-2xl lg:text-3xl font-black leading-tight;
+  }
+
+  .kpi-label {
+    @apply text-[10px] font-bold text-surface-text-secondary uppercase tracking-widest;
+  }
+
+  /* Custom scrollbar for premium look */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full border-2 border-slate-100 hover:bg-slate-400 transition-colors;
+  }
+}
