@@ -38,7 +38,7 @@ export default function Filters({ filters, onChange, technicians, onReset }: Pro
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Subject Search */}
         <div className="lg:col-span-1">
           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Assunto</label>
@@ -46,9 +46,24 @@ export default function Filters({ filters, onChange, technicians, onReset }: Pro
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             <input
               type="text"
-              placeholder="Pesquisar..."
+              placeholder="Assunto..."
               value={filters.subjectSearch}
               onChange={e => set({ subjectSearch: e.target.value })}
+              className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+            />
+          </div>
+        </div>
+
+        {/* Customer Search */}
+        <div className="lg:col-span-1">
+          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cliente</label>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Cliente..."
+              value={filters.customerNameSearch}
+              onChange={e => set({ customerNameSearch: e.target.value })}
               className="w-full pl-8 pr-3 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
             />
           </div>

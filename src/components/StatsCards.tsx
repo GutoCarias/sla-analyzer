@@ -1,4 +1,4 @@
-import { Users, Clock, CheckCircle, AlertTriangle, BarChart2 } from 'lucide-react';
+import { Users, Clock, CheckCircle, AlertTriangle, BarChart2, Activity } from 'lucide-react';
 import { Stats } from '../types';
 import { formatDuration } from '../utils/dateUtils';
 
@@ -16,41 +16,41 @@ export default function StatsCards({ stats }: Props) {
       color: 'blue',
     },
     {
-      label: 'Técnicos',
-      value: stats.technicians.toString(),
-      sub: 'responsáveis únicos',
-      icon: Users,
-      color: 'teal',
+      label: 'Em Atendimento',
+      value: stats.pending.toString(),
+      sub: 'tickets abertos',
+      icon: Activity,
+      color: 'slate',
     },
     {
-      label: 'Tempo Médio',
-      value: formatDuration(stats.avgDurationMinutes),
-      sub: 'por atendimento',
-      icon: Clock,
-      color: 'sky',
-    },
-    {
-      label: 'Maior Atendimento',
-      value: formatDuration(stats.maxDurationMinutes),
-      sub: 'tempo máximo',
+      label: 'Dentro do SLA',
+      value: stats.withinSLA.toString(),
+      sub: `${stats.slaPercent}% do total`,
       icon: CheckCircle,
       color: 'emerald',
     },
     {
-      label: 'Com Erros',
-      value: stats.errors.toString(),
-      sub: 'registros com problema',
+      label: 'Fora do SLA',
+      value: stats.outsideSLA.toString(),
+      sub: `${100 - stats.slaPercent}% do total`,
       icon: AlertTriangle,
-      color: 'amber',
+      color: 'red',
+    },
+    {
+      label: 'Tempo Médio',
+      value: formatDuration(stats.avgDurationMinutes),
+      sub: 'média geral',
+      icon: Clock,
+      color: stats.avgDurationMinutes > 120 ? 'red' : stats.avgDurationMinutes > 60 ? 'amber' : 'emerald',
     },
   ];
 
-  const colorMap: Record<string, { bg: string; icon: string; badge: string }> = {
-    blue: { bg: 'bg-blue-50', icon: 'text-blue-600', badge: 'bg-blue-100 text-blue-700' },
-    teal: { bg: 'bg-teal-50', icon: 'text-teal-600', badge: 'bg-teal-100 text-teal-700' },
-    sky: { bg: 'bg-sky-50', icon: 'text-sky-600', badge: 'bg-sky-100 text-sky-700' },
-    emerald: { bg: 'bg-emerald-50', icon: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' },
-    amber: { bg: 'bg-amber-50', icon: 'text-amber-600', badge: 'bg-amber-100 text-amber-700' },
+  const colorMap: Record<string, { bg: string; icon: string; text: string; border: string }> = {
+    blue: { bg: 'bg-blue-50', icon: 'text-blue-600', text: 'text-blue-700', border: 'border-blue-100' },
+    slate: { bg: 'bg-slate-50', icon: 'text-slate-600', text: 'text-slate-700', border: 'border-slate-100' },
+    emerald: { bg: 'bg-emerald-50', icon: 'text-emerald-600', text: 'text-emerald-700', border: 'border-emerald-100' },
+    red: { bg: 'bg-red-50', icon: 'text-red-600', text: 'text-red-700', border: 'border-red-100' },
+    amber: { bg: 'bg-amber-50', icon: 'text-amber-600', text: 'text-amber-700', border: 'border-amber-100' },
   };
 
   return (
@@ -61,18 +61,26 @@ export default function StatsCards({ stats }: Props) {
         return (
           <div
             key={card.label}
-            className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow duration-200"
+            className={`bg-white rounded-xl border ${c.border} p-3 shadow-sm hover:shadow-md transition-all duration-200`}
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xl font-bold text-slate-800 leading-tight">{card.value}</p>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">{card.label}</p>
+                <p className={`text-xl font-black ${c.text} leading-tight`}>{card.value}</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{card.label}</p>
               </div>
-              <div className={`w-7 h-7 rounded-lg ${c.bg} flex items-center justify-center`}>
+              <div className={`w-8 h-8 rounded-lg ${c.bg} flex items-center justify-center shadow-sm`}>
                 <Icon className={`w-4 h-4 ${c.icon}`} />
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">{card.sub}</p>
+            <div className="mt-2 flex items-center gap-1.5">
+              <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full ${c.bg.replace('50', '500')} transition-all duration-500`} 
+                  style={{ width: card.label.includes('SLA') ? `${card.sub.split('%')[0]}%` : '100%' }}
+                />
+              </div>
+              <span className="text-[9px] font-bold text-slate-400 whitespace-nowrap">{card.sub}</span>
+            </div>
           </div>
         );
       })}

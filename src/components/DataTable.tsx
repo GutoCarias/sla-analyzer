@@ -1,45 +1,34 @@
 import { AlertCircle, Clock, User, Calendar, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { TicketRow } from '../types';
+import { TicketRow, SLA_WARN_MINUTES, SLA_BREACH_MINUTES } from '../types';
 import TruncatedCell from './TruncatedCell';
-
-const SLA_WARN_MINUTES = 60;
-const SLA_BREACH_MINUTES = 240;
 
 interface Props {
   rows: TicketRow[];
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  isCompact?: boolean;
 }
 
 function DurationBadge({ minutes, formatted }: { minutes: number | null; formatted: string }) {
-  if (minutes === null) return <span className="text-slate-400 text-xs">—</span>;
+  if (minutes === null) return <span className="text-slate-300 text-[10px]">—</span>;
 
-  if (minutes >= SLA_BREACH_MINUTES) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200">
-        <Clock className="w-3 h-3" />
-        {formatted}
-      </span>
-    );
-  }
-  if (minutes >= SLA_WARN_MINUTES) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
-        <Clock className="w-3 h-3" />
-        {formatted}
-      </span>
-    );
-  }
+  const isBreached = minutes >= SLA_BREACH_MINUTES;
+  const isWarning = minutes >= SLA_WARN_MINUTES && minutes < SLA_BREACH_MINUTES;
+
+  let styles = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+  if (isBreached) styles = 'bg-red-50 text-red-700 border-red-200';
+  else if (isWarning) styles = 'bg-amber-50 text-amber-700 border-amber-100';
+
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
-      <Clock className="w-3 h-3" />
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${styles} shadow-sm transition-all duration-300`}>
+      <Clock className="w-2.5 h-2.5 opacity-70" />
       {formatted}
     </span>
   );
 }
 
-export default function DataTable({ rows, page, pageSize, onPageChange }: Props) {
+export default function DataTable({ rows, page, pageSize, onPageChange, isCompact = false }: Props) {
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const start = (page - 1) * pageSize;
   const pageRows = rows.slice(start, start + pageSize);
@@ -94,7 +83,7 @@ export default function DataTable({ rows, page, pageSize, onPageChange }: Props)
               ].map(h => (
                 <th
                   key={h}
-                  className="px-2 py-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-tight whitespace-nowrap"
+                  className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-2.5'} text-left text-[10px] font-bold text-slate-400 uppercase tracking-tight whitespace-nowrap`}
                 >
                   {h}
                 </th>
@@ -102,78 +91,90 @@ export default function DataTable({ rows, page, pageSize, onPageChange }: Props)
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {pageRows.map((row, i) => (
-              <tr
-                key={row.id}
-                className={`
-                  transition-colors duration-100
-                  ${row.hasError ? 'bg-red-50/30' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}
-                  hover:bg-blue-50/40
-                `}
-              >
-                <td className="px-2 py-2 whitespace-nowrap">
-                  {row.ticketNumber ? (
-                    <a
-                      href={`https://lbc.movidesk.com/Ticket/Edit/${row.ticketNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 font-bold font-mono text-[11px] hover:underline transition-all"
-                    >
-                      {row.ticketNumber}
-                    </a>
-                  ) : (
-                    <span className="text-slate-300 font-mono text-[11px]">—</span>
-                  )}
-                </td>
-                <td className="px-2 py-2 whitespace-nowrap">
-                  <span className="text-slate-500 text-[11px]">{row.openedAt.split(' ')[0]}</span>
-                </td>
-                <td className="px-2 py-2">
-                  <TruncatedCell
-                    text={row.customerName || '—'}
-                    limit={15}
-                    className="text-slate-700 font-medium text-[11px] max-w-[100px]"
-                  />
-                </td>
-                <td className="px-2 py-2">
-                  <TruncatedCell
-                    text={row.subject || '—'}
-                    limit={25}
-                    className="text-slate-500 text-[11px] max-w-[160px]"
-                  />
-                </td>
-                <td className="px-2 py-2 whitespace-nowrap">
-                  <span className="text-slate-600 text-[11px] font-medium truncate max-w-[100px] block">
-                    {row.responsible || '—'}
-                  </span>
-                </td>
-                <td className="px-2 py-2 whitespace-nowrap">
-                  <div className="flex flex-col leading-tight">
-                    <span className="text-slate-500 text-[10px]">{row.entryDate}</span>
-                    <span className="text-slate-700 font-mono text-[10px] font-bold">{row.entryTime}</span>
-                  </div>
-                </td>
-                <td className="px-2 py-2 whitespace-nowrap">
-                  <div className="flex flex-col leading-tight opacity-60">
-                    <span className="text-slate-400 text-[10px]">{row.exitDate}</span>
-                    <span className="text-slate-500 font-mono text-[10px]">{row.exitTime}</span>
-                  </div>
-                </td>
-                <td className="px-2 py-2 whitespace-nowrap">
-                  <DurationBadge minutes={row.durationMinutes} formatted={row.durationFormatted} />
-                </td>
-                <td className="px-2 py-2 whitespace-nowrap text-right">
-                  {row.hasError && (
-                    <span
-                      className="inline-block text-red-500"
-                      title={row.errorMessage}
-                    >
-                      <AlertCircle className="w-3.5 h-3.5" />
+            {pageRows.map((row, i) => {
+              const isBreached = row.durationMinutes !== null && row.durationMinutes >= SLA_BREACH_MINUTES;
+              const isWarning = row.durationMinutes !== null && row.durationMinutes >= SLA_WARN_MINUTES && row.durationMinutes < SLA_BREACH_MINUTES;
+              
+              let rowBg = i % 2 === 0 ? 'bg-white' : 'bg-slate-50/30';
+              if (row.hasError) rowBg = 'bg-red-50/30';
+              else if (isBreached) rowBg = 'bg-red-50/20';
+              else if (isWarning) rowBg = 'bg-amber-50/20';
+
+              return (
+                <tr
+                  key={row.id}
+                  className={`
+                    transition-colors duration-100
+                    ${rowBg}
+                    hover:bg-blue-50/40
+                  `}
+                >
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'} whitespace-nowrap`}>
+                    {row.ticketNumber ? (
+                      <a
+                        href={`https://lbc.movidesk.com/Ticket/Edit/${row.ticketNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 font-bold font-mono text-[11px] hover:underline transition-all"
+                      >
+                        {row.ticketNumber}
+                      </a>
+                    ) : (
+                      <span className="text-slate-300 font-mono text-[11px]">—</span>
+                    )}
+                  </td>
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'} whitespace-nowrap`}>
+                    <span className="text-slate-500 text-[11px] font-medium">{row.openedAt.split(' ')[0]}</span>
+                  </td>
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'}`}>
+                    <TruncatedCell
+                      text={row.customerName || '—'}
+                      limit={isCompact ? 15 : 25}
+                      className="text-slate-700 font-bold text-[11px] block"
+                      style={{ maxWidth: isCompact ? '100px' : '180px' }}
+                    />
+                  </td>
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'}`}>
+                    <TruncatedCell
+                      text={row.subject || '—'}
+                      limit={isCompact ? 25 : 45}
+                      className="text-slate-500 text-[11px] block"
+                      style={{ maxWidth: isCompact ? '160px' : '300px' }}
+                    />
+                  </td>
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'} whitespace-nowrap`}>
+                    <span className={`text-slate-600 text-[11px] font-medium truncate block`} style={{ maxWidth: isCompact ? '100px' : '150px' }}>
+                      {row.responsible || '—'}
                     </span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'} whitespace-nowrap`}>
+                    <div className="flex flex-col leading-tight">
+                      <span className="text-slate-500 text-[10px]">{row.entryDate}</span>
+                      <span className="text-slate-700 font-mono text-[10px] font-bold">{row.entryTime}</span>
+                    </div>
+                  </td>
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'} whitespace-nowrap`}>
+                    <div className="flex flex-col leading-tight opacity-60">
+                      <span className="text-slate-400 text-[10px]">{row.exitDate}</span>
+                      <span className="text-slate-500 font-mono text-[10px]">{row.exitTime}</span>
+                    </div>
+                  </td>
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'} whitespace-nowrap font-bold`}>
+                    <DurationBadge minutes={row.durationMinutes} formatted={row.durationFormatted} />
+                  </td>
+                  <td className={`${isCompact ? 'px-2 py-1.5' : 'px-4 py-3'} whitespace-nowrap text-right`}>
+                    {row.hasError && (
+                      <span
+                        className="inline-block text-red-500"
+                        title={row.errorMessage}
+                      >
+                        <AlertCircle className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

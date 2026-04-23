@@ -1,16 +1,17 @@
 import { useState, useMemo } from 'react';
-import { FileSpreadsheet, Download, Upload, RefreshCw } from 'lucide-react';
+import { FileSpreadsheet, Download, Upload, RefreshCw, Layout, List } from 'lucide-react';
 import FileUpload from './components/FileUpload';
 import StatsCards from './components/StatsCards';
 import Filters from './components/Filters';
 import DataTable from './components/DataTable';
 import { parseCSV, exportToCSV } from './utils/csvParser';
 import { toInputDate } from './utils/dateUtils';
-import { FilterState, Stats, TicketRow } from './types';
+import { FilterState, Stats, TicketRow, SLA_BREACH_MINUTES } from './types';
 
 const DEFAULT_FILTERS: FilterState = {
   responsible: '',
   subjectSearch: '',
+  customerNameSearch: '',
   dateFrom: '',
   dateTo: '',
   sortField: 'openedAt',
@@ -25,6 +26,7 @@ export default function App() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
   const [loaded, setLoaded] = useState(false);
+  const [isCompact, setIsCompact] = useState(true);
 
   function handleFile(content: string, name: string) {
     const parsed = parseCSV(content);
@@ -58,6 +60,11 @@ export default function App() {
     if (filters.subjectSearch) {
       const search = filters.subjectSearch.toLowerCase();
       result = result.filter(r => r.subject.toLowerCase().includes(search));
+    }
+
+    if (filters.customerNameSearch) {
+      const search = filters.customerNameSearch.toLowerCase();
+      result = result.filter(r => r.customerName.toLowerCase().includes(search));
     }
 
     if (filters.dateFrom) {
@@ -96,22 +103,34 @@ export default function App() {
 
   const stats = useMemo((): Stats => {
     const data = filteredRows;
+    const total = data.length;
+    const errors = data.filter(r => r.hasError).length;
     const valid = data.filter(r => r.durationMinutes !== null);
+    const pending = data.filter(r => r.durationMinutes === null && !r.hasError).length;
+    
     const durations = valid.map(r => r.durationMinutes as number);
+    const withinSLA = valid.filter(r => (r.durationMinutes as number) < SLA_BREACH_MINUTES).length;
+    const outsideSLA = valid.filter(r => (r.durationMinutes as number) >= SLA_BREACH_MINUTES).length;
+    
     const avg = durations.length
       ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
       : 0;
     const max = durations.length ? Math.max(...durations) : 0;
 
     const filteredTechnicians = Array.from(new Set(data.map(r => r.responsible).filter(Boolean))).length;
+    const slaPercent = valid.length ? Math.round((withinSLA / valid.length) * 100) : 0;
 
     return {
-      total: data.length,
+      total,
       valid: valid.length,
-      errors: data.filter(r => r.hasError).length,
+      errors,
+      pending,
+      withinSLA,
+      outsideSLA,
       avgDurationMinutes: avg,
       maxDurationMinutes: max,
       technicians: filteredTechnicians,
+      slaPercent,
     };
   }, [filteredRows]);
 
@@ -147,7 +166,18 @@ export default function App() {
 
           {loaded && (
             <div className="flex items-center gap-2">
-              <span className="hidden sm:inline text-[10px] text-slate-400 truncate max-w-[150px]">{fileName}</span>
+              <span className="hidden lg:inline text-[10px] text-slate-400 truncate max-w-[150px] mr-2">{fileName}</span>
+              
+              <button
+                onClick={() => setIsCompact(!isCompact)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold transition-all shadow-sm ${
+                  isCompact ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {isCompact ? <Layout className="w-3 h-3" /> : <List className="w-3 h-3" />}
+                {isCompact ? 'MODO NORMAL' : 'MODO COMPACTO'}
+              </button>
+
               <button
                 onClick={handleExport}
                 className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-md transition-colors shadow-sm"
@@ -167,7 +197,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-4 space-y-4">
+      <main className={`max-w-7xl mx-auto px-4 ${isCompact ? 'py-4' : 'py-8'} space-y-4`}>
         {!loaded ? (
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] gap-8">
             <div className="text-center space-y-2 max-w-xl">
@@ -234,6 +264,7 @@ export default function App() {
               page={page}
               pageSize={PAGE_SIZE}
               onPageChange={setPage}
+              isCompact={isCompact}
             />
 
             <div className="flex items-center justify-center pt-4 pb-8">
