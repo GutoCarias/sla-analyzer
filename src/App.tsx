@@ -10,6 +10,7 @@ import { FilterState, Stats, TicketRow } from './types';
 
 const DEFAULT_FILTERS: FilterState = {
   responsible: '',
+  subjectSearch: '',
   dateFrom: '',
   dateTo: '',
   sortField: 'openedAt',
@@ -52,6 +53,11 @@ export default function App() {
 
     if (filters.responsible) {
       result = result.filter(r => r.responsible === filters.responsible);
+    }
+
+    if (filters.subjectSearch) {
+      const search = filters.subjectSearch.toLowerCase();
+      result = result.filter(r => r.subject.toLowerCase().includes(search));
     }
 
     if (filters.dateFrom) {
@@ -126,40 +132,39 @@ export default function App() {
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50/30">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-              <FileSpreadsheet className="w-5 h-5 text-white" />
+        <div className="max-w-7xl mx-auto px-4 h-11 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+              <FileSpreadsheet className="w-4 h-4 text-white" />
             </div>
             <div>
-              <span className="font-bold text-slate-800 text-sm">SLA Analyzer</span>
-              <span className="hidden sm:inline text-xs text-slate-500 ml-2">Análise de Atendimentos</span>
+              <span className="font-bold text-slate-800 text-xs">SLA Analyzer</span>
             </div>
           </div>
 
           {loaded && (
             <div className="flex items-center gap-2">
-              <span className="hidden sm:inline text-xs text-slate-500 truncate max-w-[200px]">{fileName}</span>
+              <span className="hidden sm:inline text-[10px] text-slate-400 truncate max-w-[150px]">{fileName}</span>
               <button
                 onClick={handleExport}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-md transition-colors shadow-sm"
               >
-                <Download className="w-3.5 h-3.5" />
-                Exportar CSV
+                <Download className="w-3 h-3" />
+                EXPORTAR
               </button>
               <button
                 onClick={handleReset}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold rounded-md transition-colors"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Novo arquivo
+                <RefreshCw className="w-3 h-3" />
+                NOVO
               </button>
             </div>
           )}
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 py-4 space-y-4">
         {!loaded ? (
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] gap-8">
             <div className="text-center space-y-2 max-w-xl">
@@ -204,20 +209,20 @@ export default function App() {
               onReset={() => onFiltersChange(DEFAULT_FILTERS)}
             />
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
               <div>
-                <h2 className="font-semibold text-slate-800">Registros de Atendimento</h2>
-                <p className="text-sm text-slate-500 mt-0.5">
-                  {filteredRows.length} de {rows.length} registros
+                <h2 className="text-xs font-bold text-slate-800 uppercase tracking-tight">Registros</h2>
+                <p className="text-[10px] text-slate-400">
+                  {filteredRows.length} de {rows.length}
                   {filters.responsible && ` — ${filters.responsible}`}
                 </p>
               </div>
               <button
                 onClick={handleExport}
-                className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-sm"
+                className="flex items-center gap-1 px-2 py-1 border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-[10px] font-bold rounded-md transition-colors shadow-sm"
               >
-                <Download className="w-3.5 h-3.5" />
-                Exportar filtrado
+                <Download className="w-3 h-3" />
+                EXPORTAR FILTRADO
               </button>
             </div>
 

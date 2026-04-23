@@ -80,23 +80,21 @@ export default function DataTable({ rows, page, pageSize, onPageChange }: Props)
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-slate-200">
+            <tr className="border-b border-slate-200 bg-slate-50/50">
               {[
                 'Ticket',
-                'Data Abertura',
+                'Abertura',
                 'Cliente',
                 'Assunto',
                 'Responsável',
-                'Data Entrada',
-                'Hora Entrada',
-                'Data Saída',
-                'Hora Saída',
-                'Tempo Atendimento',
+                'Entrada',
+                'Saída',
+                'Tempo',
                 '',
               ].map(h => (
                 <th
                   key={h}
-                  className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"
+                  className="px-2 py-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-tight whitespace-nowrap"
                 >
                   {h}
                 </th>
@@ -110,82 +108,67 @@ export default function DataTable({ rows, page, pageSize, onPageChange }: Props)
                 className={`
                   transition-colors duration-100
                   ${row.hasError ? 'bg-red-50/30' : i % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}
-                  hover:bg-blue-50/30
+                  hover:bg-blue-50/40
                 `}
               >
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-2 py-2 whitespace-nowrap">
                   {row.ticketNumber ? (
                     <a
                       href={`https://lbc.movidesk.com/Ticket/Edit/${row.ticketNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-bold font-mono text-xs hover:underline decoration-blue-400/50 underline-offset-2 transition-all"
+                      className="text-blue-600 hover:text-blue-800 font-bold font-mono text-[11px] hover:underline transition-all"
                     >
                       {row.ticketNumber}
-                      <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />
                     </a>
                   ) : (
-                    <span className="text-slate-400 font-mono text-xs">—</span>
+                    <span className="text-slate-300 font-mono text-[11px]">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-slate-700">{row.openedAt || '—'}</span>
+                <td className="px-2 py-2 whitespace-nowrap">
+                  <span className="text-slate-500 text-[11px]">{row.openedAt.split(' ')[0]}</span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-2 py-2">
                   <TruncatedCell
                     text={row.customerName || '—'}
-                    limit={18}
-                    className="text-slate-700 font-medium max-w-[150px]"
+                    limit={15}
+                    className="text-slate-700 font-medium text-[11px] max-w-[100px]"
                   />
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-2 py-2">
                   <TruncatedCell
                     text={row.subject || '—'}
-                    limit={35}
-                    className="text-slate-500 text-xs max-w-[200px]"
+                    limit={25}
+                    className="text-slate-500 text-[11px] max-w-[160px]"
                   />
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
-                      <User className="w-3.5 h-3.5 text-slate-500" />
-                    </div>
-                    <span className="text-slate-800 font-medium truncate max-w-[140px]">
-                      {row.responsible || '—'}
-                    </span>
+                <td className="px-2 py-2 whitespace-nowrap">
+                  <span className="text-slate-600 text-[11px] font-medium truncate max-w-[100px] block">
+                    {row.responsible || '—'}
+                  </span>
+                </td>
+                <td className="px-2 py-2 whitespace-nowrap">
+                  <div className="flex flex-col leading-tight">
+                    <span className="text-slate-500 text-[10px]">{row.entryDate}</span>
+                    <span className="text-slate-700 font-mono text-[10px] font-bold">{row.entryTime}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-slate-600">
-                  {row.entryDate || '—'}
+                <td className="px-2 py-2 whitespace-nowrap">
+                  <div className="flex flex-col leading-tight opacity-60">
+                    <span className="text-slate-400 text-[10px]">{row.exitDate}</span>
+                    <span className="text-slate-500 font-mono text-[10px]">{row.exitTime}</span>
+                  </div>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  {row.entryTime ? (
-                    <span className="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg text-xs">
-                      {row.entryTime}
-                    </span>
-                  ) : '—'}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-slate-600">
-                  {row.exitDate || '—'}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  {row.exitTime ? (
-                    <span className="font-mono text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg text-xs">
-                      {row.exitTime}
-                    </span>
-                  ) : '—'}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-2 py-2 whitespace-nowrap">
                   <DurationBadge minutes={row.durationMinutes} formatted={row.durationFormatted} />
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
+                <td className="px-2 py-2 whitespace-nowrap text-right">
                   {row.hasError && (
                     <span
-                      className="inline-flex items-center gap-1 text-xs text-red-600"
+                      className="inline-block text-red-500"
                       title={row.errorMessage}
                     >
                       <AlertCircle className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">{row.errorMessage}</span>
                     </span>
                   )}
                 </td>

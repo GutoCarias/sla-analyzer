@@ -54,21 +54,25 @@ export default function StatsCards({ stats }: Props) {
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
       {cards.map(card => {
         const c = colorMap[card.color];
         const Icon = card.icon;
         return (
           <div
             key={card.label}
-            className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+            className="bg-white rounded-xl border border-slate-200 p-3 shadow-sm hover:shadow-md transition-shadow duration-200"
           >
-            <div className={`w-9 h-9 rounded-xl ${c.bg} flex items-center justify-center mb-3`}>
-              <Icon className={`w-5 h-5 ${c.icon}`} />
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xl font-bold text-slate-800 leading-tight">{card.value}</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tight mt-0.5">{card.label}</p>
+              </div>
+              <div className={`w-7 h-7 rounded-lg ${c.bg} flex items-center justify-center`}>
+                <Icon className={`w-4 h-4 ${c.icon}`} />
+              </div>
             </div>
-            <p className="text-2xl font-bold text-slate-800 leading-tight">{card.value}</p>
-            <p className="text-xs font-semibold text-slate-600 mt-0.5">{card.label}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{card.sub}</p>
+            <p className="text-[10px] text-slate-400 mt-1">{card.sub}</p>
           </div>
         );
       })}

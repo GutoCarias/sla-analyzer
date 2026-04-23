@@ -17,6 +17,7 @@ export interface TicketRow {
 
 export interface FilterState {
   responsible: string;
+  subjectSearch: string;
   dateFrom: string;
   dateTo: string;
   sortField: keyof TicketRow;
