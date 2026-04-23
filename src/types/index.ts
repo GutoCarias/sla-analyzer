@@ -2,6 +2,8 @@ export interface TicketRow {
   id: string;
   ticketNumber: string;
   openedAt: string;
+  customerName: string;
+  subject: string;
   responsible: string;
   entryDate: string;
   entryTime: string;

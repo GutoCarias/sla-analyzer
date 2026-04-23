@@ -175,10 +175,12 @@ export default function App() {
 
             <FileUpload onFileParsed={handleFile} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-4xl">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-5xl">
               {[
                 { label: 'Coluna A', desc: 'Data de abertura' },
                 { label: 'Coluna C', desc: 'Número do ticket' },
+                { label: 'Coluna D', desc: 'Nome do cliente' },
+                { label: 'Coluna E', desc: 'Assunto do ticket' },
                 { label: 'Coluna H', desc: 'Técnico responsável' },
                 { label: 'Colunas S e T', desc: 'Entrada/Saída SLA N2' },
               ].map(c => (

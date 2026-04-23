@@ -51,12 +51,19 @@ export function parseCSV(content: string): TicketRow[] {
     .map((line, index): TicketRow => {
       const cols = parseCSVWithDelimiter(line, delimiter);
 
-      // Column indices (0-based): A=0, C=2, H=7, S=18, T=19
+      // Column indices (0-based): A=0, C=2, D=3, E=4, H=7, S=18, T=19
       const openedAt = cols[0] ?? '';
       const ticketNumber = cols[2] ?? '';
+      const rawCustomer = cols[3] ?? '';
+      const subject = cols[4] ?? '';
       const responsible = cols[7] ?? '';
       const rawEntry = cols[18] ?? '';
       const rawExit = cols[19] ?? '';
+
+      // Clean customer name: extract content after the last "»"
+      const customerName = rawCustomer.includes('»')
+        ? rawCustomer.split('»').pop()?.trim() || rawCustomer
+        : rawCustomer;
 
       const entryDate = extractDate(rawEntry);
       const entryTime = extractTime(rawEntry);
@@ -103,6 +110,8 @@ export function parseCSV(content: string): TicketRow[] {
         id: `row-${index}`,
         ticketNumber,
         openedAt,
+        customerName,
+        subject,
         responsible,
         entryDate,
         entryTime,
@@ -121,6 +130,8 @@ export function exportToCSV(rows: TicketRow[]): string {
   const headers = [
     'Número Ticket',
     'Data de Abertura',
+    'Cliente',
+    'Assunto',
     'Responsável',
     'Data de Entrada',
     'Hora de Entrada',
@@ -136,6 +147,8 @@ export function exportToCSV(rows: TicketRow[]): string {
       [
         r.ticketNumber,
         r.openedAt,
+        r.customerName,
+        r.subject,
         r.responsible,
         r.entryDate,
         r.entryTime,

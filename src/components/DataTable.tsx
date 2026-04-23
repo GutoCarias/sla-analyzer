@@ -1,5 +1,6 @@
-import { AlertCircle, Clock, User, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertCircle, Clock, User, Calendar, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { TicketRow } from '../types';
+import TruncatedCell from './TruncatedCell';
 
 const SLA_WARN_MINUTES = 60;
 const SLA_BREACH_MINUTES = 240;
@@ -83,6 +84,8 @@ export default function DataTable({ rows, page, pageSize, onPageChange }: Props)
               {[
                 'Ticket',
                 'Data Abertura',
+                'Cliente',
+                'Assunto',
                 'Responsável',
                 'Data Entrada',
                 'Hora Entrada',
@@ -111,17 +114,43 @@ export default function DataTable({ rows, page, pageSize, onPageChange }: Props)
                 `}
               >
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className="text-blue-600 font-bold font-mono text-xs">{row.ticketNumber || '—'}</span>
+                  {row.ticketNumber ? (
+                    <a
+                      href={`https://lbc.movidesk.com/Ticket/Edit/${row.ticketNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 font-bold font-mono text-xs hover:underline decoration-blue-400/50 underline-offset-2 transition-all"
+                    >
+                      {row.ticketNumber}
+                      <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />
+                    </a>
+                  ) : (
+                    <span className="text-slate-400 font-mono text-xs">—</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <span className="text-slate-700">{row.openedAt || '—'}</span>
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <TruncatedCell
+                    text={row.customerName || '—'}
+                    limit={18}
+                    className="text-slate-700 font-medium max-w-[150px]"
+                  />
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap">
+                  <TruncatedCell
+                    text={row.subject || '—'}
+                    limit={35}
+                    className="text-slate-500 text-xs max-w-[200px]"
+                  />
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0">
                       <User className="w-3.5 h-3.5 text-slate-500" />
                     </div>
-                    <span className="text-slate-800 font-medium truncate max-w-[160px]">
+                    <span className="text-slate-800 font-medium truncate max-w-[140px]">
                       {row.responsible || '—'}
                     </span>
                   </div>
