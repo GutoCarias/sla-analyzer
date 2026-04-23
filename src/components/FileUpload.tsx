@@ -19,15 +19,25 @@ export default function FileUpload({ onFileParsed }: Props) {
 
     const reader = new FileReader();
     reader.onload = e => {
-      const content = e.target?.result as string;
-      if (!content) {
+      const buffer = e.target?.result as ArrayBuffer;
+      if (!buffer) {
         setError('Não foi possível ler o arquivo.');
         return;
       }
-      onFileParsed(content, file.name);
+      
+      // Try UTF-8 first, fallback to ISO-8859-1 if it fails (common for Brazilian CSVs)
+      const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+      try {
+        const content = utf8Decoder.decode(buffer);
+        onFileParsed(content, file.name);
+      } catch (err) {
+        const isoDecoder = new TextDecoder('iso-8859-1');
+        const content = isoDecoder.decode(buffer);
+        onFileParsed(content, file.name);
+      }
     };
     reader.onerror = () => setError('Erro ao ler o arquivo.');
-    reader.readAsText(file, 'UTF-8');
+    reader.readAsArrayBuffer(file);
   }
 
   function onDrop(e: DragEvent<HTMLDivElement>) {

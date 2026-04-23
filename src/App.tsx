@@ -95,22 +95,25 @@ export default function App() {
   }, [rows, filters]);
 
   const stats = useMemo((): Stats => {
-    const valid = rows.filter(r => r.durationMinutes !== null);
+    const data = filteredRows;
+    const valid = data.filter(r => r.durationMinutes !== null);
     const durations = valid.map(r => r.durationMinutes as number);
     const avg = durations.length
       ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
       : 0;
     const max = durations.length ? Math.max(...durations) : 0;
 
+    const filteredTechnicians = Array.from(new Set(data.map(r => r.responsible).filter(Boolean))).length;
+
     return {
-      total: rows.length,
+      total: data.length,
       valid: valid.length,
-      errors: rows.filter(r => r.hasError).length,
+      errors: data.filter(r => r.hasError).length,
       avgDurationMinutes: avg,
       maxDurationMinutes: max,
-      technicians: technicians.length,
+      technicians: filteredTechnicians,
     };
-  }, [rows, technicians]);
+  }, [filteredRows]);
 
   function handleExport() {
     const csv = exportToCSV(filteredRows);
