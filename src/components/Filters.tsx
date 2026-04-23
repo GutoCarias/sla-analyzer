@@ -1,10 +1,12 @@
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { FilterState, TicketRow } from '../types';
+import TechnicianFilter from './TechnicianFilter';
 
 interface Props {
   filters: FilterState;
   onChange: (filters: FilterState) => void;
   technicians: string[];
+  ticketCounts: Record<string, number>;
   onReset: () => void;
 }
 
@@ -15,8 +17,14 @@ const SORT_OPTIONS: { value: keyof TicketRow; label: string }[] = [
   { value: 'durationMinutes', label: 'Tempo de Atendimento' },
 ];
 
-export default function Filters({ filters, onChange, technicians, onReset }: Props) {
-  const hasActiveFilters = filters.responsible || filters.subjectSearch || filters.dateFrom || filters.dateTo;
+export default function Filters({ filters, onChange, technicians, ticketCounts, onReset }: Props) {
+  const hasActiveFilters = 
+    filters.responsible.length > 0 || 
+    filters.subjectSearch || 
+    filters.customerNameSearch || 
+    filters.dateFrom || 
+    filters.dateTo || 
+    filters.statusFilter;
 
   function set(partial: Partial<FilterState>) {
     onChange({ ...filters, ...partial });
@@ -69,32 +77,14 @@ export default function Filters({ filters, onChange, technicians, onReset }: Pro
           </div>
         </div>
 
-        {/* Status Indicator (if active via chart) */}
-        {filters.statusFilter && (
-          <div className="lg:col-span-1">
-            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status Ativo</label>
-            <div className="flex items-center justify-between px-2 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-xs font-bold">
-              <span>{filters.statusFilter}</span>
-              <button onClick={() => set({ statusFilter: '' })} className="hover:text-red-500">
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Technician filter */}
-        <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Técnico</label>
-          <select
-            value={filters.responsible}
-            onChange={e => set({ responsible: e.target.value })}
-            className="w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 appearance-none cursor-pointer"
-          >
-            <option value="">Todos</option>
-            {technicians.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
+        {/* Technician Multi-Select */}
+        <div className="lg:col-span-1">
+          <TechnicianFilter 
+            technicians={technicians}
+            selected={filters.responsible}
+            onChange={(selected) => set({ responsible: selected })}
+            ticketCounts={ticketCounts}
+          />
         </div>
 
         {/* Date from */}
@@ -141,6 +131,19 @@ export default function Filters({ filters, onChange, technicians, onReset }: Pro
           </div>
         </div>
       </div>
+
+      {/* Active Status Indicator */}
+      {filters.statusFilter && (
+        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filtro de Status:</span>
+          <div className="flex items-center gap-2 px-2 py-0.5 bg-blue-50 border border-blue-200 rounded-md text-blue-700 text-[10px] font-bold shadow-sm">
+            <span>{filters.statusFilter}</span>
+            <button onClick={() => set({ statusFilter: '' })} className="hover:text-red-500 transition-colors">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

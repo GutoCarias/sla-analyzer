@@ -10,7 +10,7 @@ import { toInputDate } from './utils/dateUtils';
 import { FilterState, Stats, TicketRow, SLA_BREACH_MINUTES, SLA_WARN_MINUTES } from './types';
 
 const DEFAULT_FILTERS: FilterState = {
-  responsible: '',
+  responsible: [],
   subjectSearch: '',
   customerNameSearch: '',
   statusFilter: '',
@@ -52,11 +52,21 @@ export default function App() {
     [rows]
   );
 
+  const ticketCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    rows.forEach(r => {
+      if (r.responsible) {
+        counts[r.responsible] = (counts[r.responsible] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [rows]);
+
   const filteredRows = useMemo(() => {
     let result = [...rows];
 
-    if (filters.responsible) {
-      result = result.filter(r => r.responsible === filters.responsible);
+    if (filters.responsible.length > 0) {
+      result = result.filter(r => filters.responsible.includes(r.responsible));
     }
 
     if (filters.subjectSearch) {
@@ -258,6 +268,7 @@ export default function App() {
               filters={filters}
               onChange={onFiltersChange}
               technicians={technicians}
+              ticketCounts={ticketCounts}
               onReset={() => onFiltersChange(DEFAULT_FILTERS)}
             />
 
@@ -266,7 +277,7 @@ export default function App() {
                 <h2 className="text-xs font-bold text-slate-800 uppercase tracking-tight">Registros</h2>
                 <p className="text-[10px] text-slate-400">
                   {filteredRows.length} de {rows.length}
-                  {filters.responsible && ` — ${filters.responsible}`}
+                  {filters.responsible.length > 0 && ` — ${filters.responsible.length} técnicos selecionados`}
                 </p>
               </div>
               <button

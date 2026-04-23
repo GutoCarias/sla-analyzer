@@ -19,7 +19,7 @@ export interface TicketRow {
 }
 
 export interface FilterState {
-  responsible: string;
+  responsible: string[];
   subjectSearch: string;
   customerNameSearch: string;
   statusFilter: 'Normal' | 'Atenção' | 'SLA Estourado' | '';
