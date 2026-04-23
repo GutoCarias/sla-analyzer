@@ -22,6 +22,7 @@ export interface FilterState {
   responsible: string;
   subjectSearch: string;
   customerNameSearch: string;
+  statusFilter: 'Normal' | 'Atenção' | 'SLA Estourado' | '';
   dateFrom: string;
   dateTo: string;
   sortField: keyof TicketRow;

@@ -2,16 +2,18 @@ import { useState, useMemo } from 'react';
 import { FileSpreadsheet, Download, Upload, RefreshCw, Layout, List } from 'lucide-react';
 import FileUpload from './components/FileUpload';
 import StatsCards from './components/StatsCards';
+import DashboardCharts from './components/DashboardCharts';
 import Filters from './components/Filters';
 import DataTable from './components/DataTable';
 import { parseCSV, exportToCSV } from './utils/csvParser';
 import { toInputDate } from './utils/dateUtils';
-import { FilterState, Stats, TicketRow, SLA_BREACH_MINUTES } from './types';
+import { FilterState, Stats, TicketRow, SLA_BREACH_MINUTES, SLA_WARN_MINUTES } from './types';
 
 const DEFAULT_FILTERS: FilterState = {
   responsible: '',
   subjectSearch: '',
   customerNameSearch: '',
+  statusFilter: '',
   dateFrom: '',
   dateTo: '',
   sortField: 'openedAt',
@@ -67,6 +69,16 @@ export default function App() {
       result = result.filter(r => r.customerName.toLowerCase().includes(search));
     }
 
+    if (filters.statusFilter) {
+      result = result.filter(r => {
+        if (r.durationMinutes === null) return false;
+        if (filters.statusFilter === 'Normal') return r.durationMinutes < SLA_WARN_MINUTES;
+        if (filters.statusFilter === 'Atenção') return r.durationMinutes >= SLA_WARN_MINUTES && r.durationMinutes < SLA_BREACH_MINUTES;
+        if (filters.statusFilter === 'SLA Estourado') return r.durationMinutes >= SLA_BREACH_MINUTES;
+        return true;
+      });
+    }
+
     if (filters.dateFrom) {
       result = result.filter(r => {
         const d = toInputDate(r.openedAt);
@@ -100,6 +112,7 @@ export default function App() {
 
     return result;
   }, [rows, filters]);
+...
 
   const stats = useMemo((): Stats => {
     const data = filteredRows;
@@ -234,6 +247,12 @@ export default function App() {
         ) : (
           <>
             <StatsCards stats={stats} />
+
+            <DashboardCharts 
+              rows={filteredRows} 
+              onFilterTechnician={(tech) => onFiltersChange({ ...filters, responsible: tech })}
+              onFilterStatus={(status) => onFiltersChange({ ...filters, statusFilter: status as any })}
+            />
 
             <Filters
               filters={filters}
