@@ -122,7 +122,6 @@ export default function App() {
 
     return result;
   }, [rows, filters]);
-...
 
   const stats = useMemo((): Stats => {
     const data = filteredRows;
@@ -260,7 +259,7 @@ export default function App() {
 
             <DashboardCharts 
               rows={filteredRows} 
-              onFilterTechnician={(tech) => onFiltersChange({ ...filters, responsible: tech })}
+              onFilterTechnician={(tech) => onFiltersChange({ ...filters, responsible: [tech] })}
               onFilterStatus={(status) => onFiltersChange({ ...filters, statusFilter: status as any })}
             />
 
