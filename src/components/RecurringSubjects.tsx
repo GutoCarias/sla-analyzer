@@ -9,7 +9,10 @@ interface GroupDefinition {
 }
 
 const GROUPS: GroupDefinition[] = [
-  { name: 'Cancelamento', keywords: ['cancelamento', 'cancelar', 'cancelado'] },
+  { name: 'Cancelamento NF-e', keywords: ['cancelamento nfe', 'cancelamento nf-e', 'cancelamento de nfe', 'cancelamento de nf-e', 'cancelar nfe', 'cancelar nf-e'] },
+  { name: 'Cancelamento NFC-e', keywords: ['cancelamento nfce', 'cancelamento nfc-e', 'cancelamento de nfce', 'cancelamento de nfc-e', 'cancelar nfce', 'cancelar nfc-e'] },
+  { name: 'Cancelamento Quebra de Sequência', keywords: ['quebra de sequencia', 'cancelamento quebra', 'cancelamento de quebra', 'cancelamento sequencia', 'cancelar quebra', 'inutilizacao'] },
+  { name: 'Cancelamento (Outros)', keywords: ['cancelamento', 'cancelar', 'cancelado'] },
   { name: 'Emissão', keywords: ['emissao', 'emitir', 'emitindo'] },
   { name: 'Nota Fiscal', keywords: ['nfe', 'nf-e', 'nfce', 'nfc-e'] },
   { name: 'Relatórios', keywords: ['relatorio', 'relatorios'] },
