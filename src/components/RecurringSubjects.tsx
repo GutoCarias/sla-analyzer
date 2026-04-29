@@ -9,12 +9,13 @@ interface GroupDefinition {
 }
 
 const GROUPS: GroupDefinition[] = [
-  { name: 'Cancelamento NF-e', keywords: ['cancelamento nfe', 'cancelamento nf-e', 'cancelamento de nfe', 'cancelamento de nf-e', 'cancelar nfe', 'cancelar nf-e'] },
+  { name: 'Cancelamento NF-e', keywords: ['cancelamento nfe', 'cancelamento nf-e', 'cancelamento de nfe', 'cancelamento de nf-e', 'cancelar nfe', 'cancelar nf-e', 'cancelamento nf', 'cancelar nf', 'cancelamento nota fiscal', 'cancelamento de nota fiscal', 'cancelar nota fiscal'] },
   { name: 'Cancelamento NFC-e', keywords: ['cancelamento nfce', 'cancelamento nfc-e', 'cancelamento de nfce', 'cancelamento de nfc-e', 'cancelar nfce', 'cancelar nfc-e'] },
+  { name: 'Cancelamento PDV', keywords: ['cancelamento pdv', 'cancelamento de pdv', 'cancelar pdv', 'cancelar no pdv', 'cancelamento no pdv'] },
   { name: 'Cancelamento Quebra de Sequência', keywords: ['quebra de sequencia', 'cancelamento quebra', 'cancelamento de quebra', 'cancelamento sequencia', 'cancelar quebra', 'inutilizacao'] },
   { name: 'Cancelamento (Outros)', keywords: ['cancelamento', 'cancelar', 'cancelado'] },
   { name: 'Emissão', keywords: ['emissao', 'emitir', 'emitindo'] },
-  { name: 'Nota Fiscal', keywords: ['nfe', 'nf-e', 'nfce', 'nfc-e'] },
+  { name: 'Nota Fiscal', keywords: ['nfe', 'nf-e', 'nfce', 'nfc-e', 'nota fiscal'] },
   { name: 'Relatórios', keywords: ['relatorio', 'relatorios'] },
   { name: 'LBCPOS', keywords: ['lbcpos', 'lbc pos', 'pos lbc'] },
 ];
